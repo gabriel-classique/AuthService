@@ -98,7 +98,7 @@ class MainActivity : ComponentActivity() {
                         composable<HomeScreen> {
 
                             val args = it.toRoute<HomeScreen>()
-                            val viewModel: AuthViewModel = hiltViewModel()
+                            val viewModel: HomeViewModel = hiltViewModel()
 
                             Column(
                                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -106,6 +106,24 @@ class MainActivity : ComponentActivity() {
                             ){
 
                                 Text(text = "Email: ${args.email}\nuid: ${args.uid}")
+                                Button(
+                                    onClick = {
+                                        viewModel.saveData {
+                                            Toast.makeText(applicationContext, "SUCCESS", Toast.LENGTH_SHORT).show()
+                                        }
+                                    }
+                                ) {
+                                    Text(text = "Save")
+                                }
+                                Button(
+                                    onClick = {
+                                        viewModel.getData {
+                                            Toast.makeText(applicationContext,it.content , Toast.LENGTH_SHORT).show()
+                                        }
+                                    }
+                                ) {
+                                    Text(text = "Get")
+                                }
                                 Button(
                                     onClick = {
                                         navController.clearAndNavigate(AuthScreen)

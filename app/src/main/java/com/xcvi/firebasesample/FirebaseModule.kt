@@ -31,4 +31,9 @@ object FirebaseModule {
     fun provideAuthService(auth: FirebaseAuth, db: FirebaseDatabase): AuthenticationService{
         return AuthenticationService(auth, db)
     }
+    @Provides
+    @Singleton
+    fun provideDataRepo(auth: FirebaseAuth, db: FirebaseDatabase): DataRepository{
+        return DataRepository(auth, db)
+    }
 }
