@@ -124,7 +124,7 @@ class MainActivity : ComponentActivity() {
 }
 
 
-fun <T : Any> NavHostController.clearAndNavigate(route: T) {
+fun <R : Any> NavHostController.clearAndNavigate(route: R) {
     navigate(route = route) {
         popUpTo(graph.startDestinationId) { inclusive = true }
     }
