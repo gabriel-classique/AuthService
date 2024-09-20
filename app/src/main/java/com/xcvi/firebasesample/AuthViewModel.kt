@@ -1,9 +1,7 @@
 package com.xcvi.firebasesample
 
-import android.widget.Toast
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -18,6 +16,14 @@ class AuthViewModel @Inject constructor(
 
     var email by mutableStateOf("ras@gmail.com")
     var password by mutableStateOf("12345678")
+
+    var user: User? by mutableStateOf(null)
+
+    init {
+        authService.isLoggedIn {
+            user = it
+        }
+    }
 
     fun onEmailInput(value: String) {
         email = value
@@ -56,6 +62,12 @@ class AuthViewModel @Inject constructor(
                     onFailure(it)
                 }
             )
+        }
+    }
+
+    fun logout(){
+        viewModelScope.launch {
+            authService.logout()
         }
     }
 

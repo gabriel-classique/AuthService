@@ -2,15 +2,28 @@ package com.xcvi.firebasesample
 
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.FirebaseDatabase
-import com.google.firebase.ktx.Firebase
-import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 
 class AuthenticationService @Inject constructor(
     private val auth: FirebaseAuth,
     private val db: FirebaseDatabase
 ) {
-    private val usersDB = db.getReference("User")
+
+    fun isLoggedIn(
+        onAlreadyLoggedIn: (User) -> Unit
+    ): Boolean{
+        val firebaseUser = auth.currentUser
+        return if(firebaseUser != null){
+            onAlreadyLoggedIn(User(firebaseUser.uid, firebaseUser.email.toString()))
+            true
+        } else {
+            false
+        }
+    }
+
+    fun logout(){
+        auth.signOut()
+    }
 
     fun register(
         email: String,
@@ -25,7 +38,7 @@ class AuthenticationService @Inject constructor(
                         uid = it.uid,
                         email = it.email.toString()
                     )
-                    usersDB.child(user.uid).setValue(user).addOnCompleteListener {
+                    db.getReference("User").child(user.uid).setValue(user).addOnCompleteListener {
                         onSuccess(user)
                     }
                 }
