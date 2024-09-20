@@ -28,11 +28,16 @@ class HomeViewModel @Inject constructor(
         }
     }
 
-    fun getData(onSuccess: (DataModel)-> Unit){
+    fun getData(onSuccess: (String)-> Unit, onFailure: (Exception) -> Unit){
         viewModelScope.launch{
-            dataRepository.getDataById(id = id) {
-                onSuccess(it)
-            }
+            dataRepository.getData(
+                onSuccess = {
+                    onSuccess(it)
+                },
+                onFailure = {
+                    onFailure(it)
+                }
+            )
         }
     }
 

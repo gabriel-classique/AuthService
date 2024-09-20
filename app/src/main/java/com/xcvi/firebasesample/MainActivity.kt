@@ -9,12 +9,18 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -115,11 +121,25 @@ class MainActivity : ComponentActivity() {
                                 ) {
                                     Text(text = "Save")
                                 }
+
+                                var success by remember {
+                                    mutableStateOf(false)
+                                }
+                                var text by remember {
+                                    mutableStateOf("")
+                                }
                                 Button(
                                     onClick = {
-                                        viewModel.getData {
-                                            Toast.makeText(applicationContext,it.content , Toast.LENGTH_SHORT).show()
-                                        }
+                                        viewModel.getData(
+                                            onSuccess = { data ->
+                                                success = true
+                                                text = data
+                                                Toast.makeText(applicationContext, "SUCCESS", Toast.LENGTH_SHORT).show()
+                                            },
+                                            onFailure = {
+                                                Toast.makeText(applicationContext, it.message, Toast.LENGTH_SHORT).show()
+                                            }
+                                        )
                                     }
                                 ) {
                                     Text(text = "Get")
@@ -131,6 +151,9 @@ class MainActivity : ComponentActivity() {
                                     }
                                 ) {
                                     Text(text = "Logout")
+                                }
+                                if(success){
+                                    Text(text = text)
                                 }
                             }
                         }
