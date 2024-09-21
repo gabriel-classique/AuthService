@@ -66,7 +66,7 @@ dependencies {
     ksp(libs.hilt.androidcompiler)
     ksp(libs.hilt.hiltcompiler)
 
-
+    implementation(libs.kotlinx.coroutines.core)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)

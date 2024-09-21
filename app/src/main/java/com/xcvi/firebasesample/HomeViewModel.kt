@@ -1,11 +1,10 @@
 package com.xcvi.firebasesample
 
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.Instant
 import javax.inject.Inject
@@ -16,7 +15,28 @@ class HomeViewModel @Inject constructor(
     private val dataRepository: DataRepository
 ) : ViewModel() {
 
-    val id = "12345678"
+    var state = MutableStateFlow(UiState())
+
+    data class UiState(
+        val data: List<DataModel> = emptyList(),
+        val errorMessage: String = ""
+    )
+
+    init {
+        viewModelScope.launch {
+            dataRepository.observeData().collect{ result ->
+                result.onSuccess { data ->
+                    state.update {
+                        it.copy(data = data)
+                    }
+                }.onFailure { error ->
+                    state.update {
+                        it.copy(errorMessage = error.message.toString())
+                    }
+                }
+            }
+        }
+    }
 
     fun saveData(onSuccess: () -> Unit){
         viewModelScope.launch {
@@ -28,17 +48,18 @@ class HomeViewModel @Inject constructor(
         }
     }
 
-    fun getData(onSuccess: (String)-> Unit, onFailure: (Exception) -> Unit){
-        viewModelScope.launch{
-            dataRepository.getData(
-                onSuccess = {
-                    onSuccess(it)
-                },
-                onFailure = {
-                    onFailure(it)
-                }
-            )
-        }
+    fun getData(onSuccess: ()-> Unit, onFailure: (Exception) -> Unit){
+//        viewModelScope.launch{
+//            dataRepository.getData(
+//                onSuccess = {
+//                    data.value = it
+//                    onSuccess()
+//                },
+//                onFailure = {
+//                    onFailure(it)
+//                }
+//            )
+//        }
     }
 
     fun logout(){

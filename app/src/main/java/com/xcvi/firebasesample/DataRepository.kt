@@ -1,11 +1,15 @@
 package com.xcvi.firebasesample
 
-import android.util.Log
-import com.google.android.gms.tasks.OnCompleteListener
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
-import com.google.firebase.database.Query
+import com.google.firebase.database.ValueEventListener
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.channels.trySendBlocking
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.callbackFlow
 import java.time.Instant
 
 
@@ -14,43 +18,71 @@ class DataRepository(
     private val db: FirebaseDatabase
 ) {
 
-    suspend fun getData(onSuccess: (String) -> Unit, onFailure: (Exception) -> Unit) {
+    companion object {
+        const val DATA_PATH = "Data"
+    }
 
-        val dataList: MutableList<String> = emptyList<String>().toMutableList()
+    private fun getDataReference(uid: String): DatabaseReference {
+        return db.reference.child(DATA_PATH).child(uid)
+    }
 
-        val user = auth.currentUser
-        if (user != null){
+    fun observeData(): Flow<Result<List<DataModel>>> {
+        return callbackFlow {
+            auth.currentUser?.let { user ->
+                val postListener = object : ValueEventListener {
+                    override fun onCancelled(error: DatabaseError) {
+                        this@callbackFlow.trySendBlocking(Result.failure(error.toException()))
+                    }
+
+                    override fun onDataChange(dataSnapshot: DataSnapshot) {
+                        val items = dataSnapshot.children.map { item ->
+                            item.getValue(DataModel::class.java)
+                        }
+                        this@callbackFlow.trySendBlocking(Result.success(items.filterNotNull()))
+                    }
+                }
+                getDataReference(user.uid).addValueEventListener(postListener)
+
+                awaitClose {
+                    getDataReference(user.uid).removeEventListener(postListener)
+                }
+            }
+        }
+    }
+
+    fun getData(onSuccess: (List<DataModel>) -> Unit, onFailure: (Exception) -> Unit) {
+        auth.currentUser?.let { user ->
             val dataRef = db.reference.child("Steps").child(user.uid)
 
             dataRef.get().addOnCompleteListener listener@{ task ->
                 if (task.isSuccessful) {
-                    for (snapShot in task.result.children) {
-                        val data = snapShot.getValue(DataModel::class.java)
-                        dataList.add(data.toString())
+
+                    val data = task.result.children.map { snapShot ->
+                        snapShot.getValue(DataModel::class.java) ?: return@listener
                     }
+                    onSuccess(data)
+
 
                 } else {
                     onFailure(FirebaseException("Failed"))
                     return@listener
                 }
-                onSuccess(dataList.toString())
             }
         }
-
-
-
     }
 
-    suspend fun saveData(content: String, onSuccess: () -> Unit) {
+
+    fun saveData(content: String, onSuccess: () -> Unit) {
         auth.currentUser?.let { user ->
             val dataModel = DataModel(
                 content = content,
                 id = Instant.now().toEpochMilli().toString()
             )
 
-            db.getReference("Steps").child(user.uid).child(dataModel.id).setValue(dataModel).addOnCompleteListener {
-                onSuccess()
-            }
+            getDataReference(user.uid).child(dataModel.id).setValue(dataModel)
+                .addOnCompleteListener {
+                    onSuccess()
+                }
         }
     }
 
